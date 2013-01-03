@@ -13,8 +13,9 @@ export VISUAL=vim
 # Example: a2user apache2ctl start
 alias 'a2user=APACHE_CONFDIR=~/.apache2 APACHE_ULIMIT_MAX_FILES=true'
 
-# Prevents the disaster 'cp *' can cause...
+# Prevents the disaster 'cp *' or 'mv *' can cause...
 alias 'cp=cp -i'
+alias 'mv=mv -i'
 
 # See COMMANDS section below.
 alias 'cd..=c~'
