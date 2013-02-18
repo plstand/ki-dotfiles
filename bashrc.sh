@@ -76,6 +76,36 @@ greptree()
 	grep -rHn --include="$@" .
 }
 
+# Starts or stops a local rendering server for the MediaWiki Collection extension.
+mwlibserver() {
+	local srvroot="$HOME/.mwlibserver"
+	case "$1" in
+		start)
+			(cd "$srvroot"
+				(setsid nserve.py <&- >> log/nserve.txt 2>&1 &)
+				(setsid mw-qserve <&- >> log/mw-qserve.txt 2>&1 &)
+				(setsid nslave.py --cachedir cache <&- >> log/nslave.txt 2>&1 &)
+				(setsid postman.py <&- >> log/postman.txt 2>&1 &)
+			)
+			;;
+		stop)
+			killall -u "$USER" nserve.py
+			killall -u "$USER" mw-qserve
+		        killall -u "$USER" nslave.py
+	        	killall -u "$USER" postman.py
+			;;
+		force-reload|restart)
+			mwlibserver stop
+			mwlibserver start
+			;;
+		*)
+			echo "Usage: mwlibserver {start|stop}"
+			return 1
+			;;
+	esac
+	return 0
+}
+
 ## PROMPT COMMANDS ##
 
 setaf_3="$(tput setaf 3)"
