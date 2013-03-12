@@ -82,17 +82,17 @@ mwlibserver() {
 	case "$1" in
 		start)
 			(cd "$srvroot"
-				(setsid nserve.py <&- >> log/nserve.txt 2>&1 &)
+				(setsid nserve <&- >> log/nserve.txt 2>&1 &)
 				(setsid mw-qserve <&- >> log/mw-qserve.txt 2>&1 &)
-				(setsid nslave.py --cachedir cache <&- >> log/nslave.txt 2>&1 &)
-				(setsid postman.py <&- >> log/postman.txt 2>&1 &)
+				(setsid nslave --cachedir cache <&- >> log/nslave.txt 2>&1 &)
+				(setsid postman <&- >> log/postman.txt 2>&1 &)
 			)
 			;;
 		stop)
-			killall -u "$USER" nserve.py
+			killall -u "$USER" nserve
 			killall -u "$USER" mw-qserve
-		        killall -u "$USER" nslave.py
-	        	killall -u "$USER" postman.py
+		        killall -u "$USER" nslave
+			killall -u "$USER" postman
 			;;
 		force-reload|restart)
 			mwlibserver stop
