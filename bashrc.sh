@@ -3,9 +3,11 @@
 
 ## SETTINGS ##
 shopt -s extglob
-CDPATH=:~/Projects
 export VISUAL=vim
-[[ -f /etc/bash_completion ]] && . /etc/bash_completion
+PS1="\n$PS1"
+unset command_not_found_handle
+
+pp=~/Projects
 
 ## ALIASES ##
 
@@ -16,9 +18,6 @@ alias 'a2user=APACHE_CONFDIR=~/.apache2 APACHE_ULIMIT_MAX_FILES=true'
 # Prevents the disaster 'cp *' or 'mv *' can cause...
 alias 'cp=cp -i'
 alias 'mv=mv -i'
-
-# See COMMANDS section below.
-alias 'cd..=c~'
 
 ## COMMANDS ##
 
@@ -76,45 +75,27 @@ greptree()
 	grep -rHn --include="$@" .
 }
 
-# Starts or stops a local rendering server for the MediaWiki Collection extension.
-mwlibserver() {
-	local srvroot="$HOME/.mwlibserver"
-	case "$1" in
-		start)
-			(cd "$srvroot"
-				(setsid nserve <&- >> log/nserve.txt 2>&1 &)
-				(setsid mw-qserve <&- >> log/mw-qserve.txt 2>&1 &)
-				(setsid nslave --cachedir cache <&- >> log/nslave.txt 2>&1 &)
-				(setsid postman <&- >> log/postman.txt 2>&1 &)
-			)
-			;;
-		stop)
-			killall -u "$USER" nserve
-			killall -u "$USER" mw-qserve
-		        killall -u "$USER" nslave
-			killall -u "$USER" postman
-			;;
-		force-reload|restart)
-			mwlibserver stop
-			mwlibserver start
-			;;
-		*)
-			echo "Usage: mwlibserver {start|stop}"
-			return 1
-			;;
-	esac
-	return 0
-}
 
 ## PROMPT COMMANDS ##
 
-setaf_3="$(tput setaf 3)"
-sgr0="$(tput sgr0)"
+ORIG_PS1="$PS1"
+PROMPT_COMMAND=prenable
 
-ORIG_PS1="\n${debian_chroot:+($debian_chroot)}\u@\h:\w\$ "
+prenable()
+{
+	echo 'Prompt command will be enabled for next command line'
+	echo 'To disable prompt command, use prdisable'
+	PROMPT_COMMAND='_kdf_gitprompt || PS1="$ORIG_PS1"'
+}
+
+prdisable()
+{
+	unset PROMPT_COMMAND
+	PS1="$ORIG_PS1"
+}
 
 # Inserts git information into the prompt.
-rcpc_git()
+_kdf_gitprompt()
 {
 	local repoToplevel="$(git rev-parse --show-toplevel 2>/dev/null)"
 
@@ -125,33 +106,6 @@ rcpc_git()
 
 	[[ -z $branch ]] && branch="detached: $(git name-rev --name-only --always HEAD 2>/dev/null)"
 
-	local formattedPath="\[$setaf_3\]$friendlyRepoToplevel\[$sgr0\]$pathWithinRepo (${branch##refs/heads/})"
-	PS1="\n${debian_chroot:+($debian_chroot)}\u@\h:$formattedPath\$ "
-}
-
-PROMPT_COMMAND='rcpc_git || PS1="$ORIG_PS1"'
-
-## COMMAND-NOT-FOUND HANDLER ##
-
-command_not_found_handle()
-{
-	local i n x
-
-	# Repeats a command (e.g. 100x repeats a command 100 times).
-	if [[ $1 =~ ^[0-9]+x$ ]]; then
-		(( n = 10#${1%x} ))
-		shift
-		for (( x = 0; x < n; x++ )); do
-			"$@"
-		done
-		return
-	fi
-
-	if [[ -x /usr/lib/command-not-found ]]; then
-		/usr/lib/command-not-found -- "$1"
-		return
-	fi
-
-	printf "%s: command not found\n" "$1" >&2
-	return 127
+	local setaf_3="\e[33m" sgr0="\e(B\e[m"
+	PS1="${ORIG_PS1/\\w/\[$setaf_3\]$friendlyRepoToplevel\[$sgr0\]$pathWithinRepo (${branch##refs/heads/})}"
 }
