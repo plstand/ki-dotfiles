@@ -106,6 +106,6 @@ _kdf_gitprompt()
 
 	[[ -z $branch ]] && branch="detached: $(git name-rev --name-only --always HEAD 2>/dev/null)"
 
-	local setaf_3="\e[33m" sgr0="\e(B\e[m"
-	PS1="${ORIG_PS1/\\w/\[$setaf_3\]$friendlyRepoToplevel\[$sgr0\]$pathWithinRepo (${branch##refs/heads/})}"
+	local setaf_3=$'\e[33m' sgr0=$'\e(B\e[m'
+	PS1="${ORIG_PS1/\\w/\\[$setaf_3\\]$friendlyRepoToplevel\\[$sgr0\\]$pathWithinRepo (${branch##refs/heads/})}"
 }
