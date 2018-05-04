@@ -1,19 +1,41 @@
 # This script is only meant for interactive shells.
-[[ -z $PS1 ]] && return
+[[ $- = *i* ]] || return
 
 ## SETTINGS ##
-shopt -s extglob
-export VISUAL=vim
-PS1="\n$PS1"
-unset command_not_found_handle
+shopt -s histappend
+HISTCONTROL=ignoreboth
+HISTSIZE=1000
+HISTFILESIZE=2000
+PS1='\n${debian_chroot:+($debian_chroot)}\u@\h:\w\[\e[m\]\$ '
 
-pp=~/Projects
+export VISUAL=vim
+
+# Set the title of the terminal window
+ORIG_PS1="$PS1"
+case "$TERM" in
+	xterm*|rxvt*)
+		ORIG_PS1_PREFIX="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]"
+		;;
+	*)
+		ORIG_PS1_PREFIX=
+		;;
+esac
+PS1="$ORIG_PS1_PREFIX$ORIG_PS1"
+
+# Enable colorized output for ls
+if [[ -x /usr/bin/dircolors ]]; then
+	eval "$(dircolors -b)"
+	alias ls='ls --color=auto'
+fi
+
+# Enable bash-completion
+if ! shopt -oq posix; then
+	if [[ -f /usr/share/bash-completion/bash_completion ]]; then
+		. /usr/share/bash-completion/bash_completion
+	fi
+fi
 
 ## ALIASES ##
-
-# Makes the Debian/Ubuntu apache2 management scripts work on my personal installation.
-# Example: a2user apache2ctl start
-alias 'a2user=APACHE_CONFDIR=~/.apache2 APACHE_ULIMIT_MAX_FILES=true'
 
 # Prevents the disaster 'cp *' or 'mv *' can cause...
 alias 'cp=cp -i'
@@ -28,9 +50,9 @@ cdd()
 
 	# Pass some options through to cd.
 	OPTIND=1
-	while getopts LPe opt; do
+	while getopts LPe@ opt; do
 		case "$opt" in
-			[LPe])
+			[LPe@])
 				args+=("-$opt")
 				;;
 			\?)
@@ -75,37 +97,63 @@ greptree()
 	grep -rHn --include="$@" .
 }
 
-
 ## PROMPT COMMANDS ##
 
-ORIG_PS1="$PS1"
-PROMPT_COMMAND=prenable
+if [[ -x /usr/bin/tput ]] && tput setaf 1 > /dev/null 2>&1; then
+	KDF_COLOR_SUPPORTED=yes
+else
+	KDF_COLOR_SUPPORTED=
+fi
 
-prenable()
+__kdf_gitprompt_colorize_pwd()
 {
-	echo 'Prompt command will be enabled for next command line'
-	echo 'To disable prompt command, use prdisable'
-	PROMPT_COMMAND='_kdf_gitprompt || PS1="$ORIG_PS1"'
+	local repo_info="$(git rev-parse --is-inside-work-tree \
+		--show-toplevel 2>/dev/null)"
+
+	local toplevel="${repo_info##*$'\n'}"
+	local inside_worktree="${repo_info%$'\n'*}"
+
+	if [[ $inside_worktree != true ]]; then
+		return
+	fi
+
+	# Split $PWD into "repo" and "path" parts, in a way that
+	# works even in the presence of symlinks
+	eval "$(
+		exec 2>/dev/null
+		local repopart="$PWD" pathpart=
+		while cd .. && [[ $(pwd -P)/ = "$toplevel"/* ]]; do
+			pathpart="/${repopart##*/}$pathpart"
+			repopart="${repopart%/*}"
+		done
+		printf 'local repopart=%q pathpart=%q' "$repopart" "$pathpart"
+	)"
+
+	# Abbreviate $HOME as ~
+	__kdf_gitprompt_repopart="${repopart/#"$HOME/"/"~/"}"
+	__kdf_gitprompt_pathpart="$pathpart"
+
+	# Build the string to insert into PS1
+	__kdf_gitprompt_pwd="\[\e[33m\]\${__kdf_gitprompt_repopart}\[\e[m\]\${__kdf_gitprompt_pathpart}"
 }
 
-prdisable()
+__kdf_prompt_command()
 {
-	unset PROMPT_COMMAND
-	PS1="$ORIG_PS1"
+	__git_ps1 '' ''
+	if [[ -z $PS1 ]]; then
+		PS1="$ORIG_PS1_PREFIX$ORIG_PS1"
+		return
+	fi
+
+	__kdf_gitprompt_pwd="\w"
+	if [[ $KDF_COLOR_SUPPORTED = yes ]]; then
+		__kdf_gitprompt_colorize_pwd
+	fi
+	PS1="$ORIG_PS1_PREFIX${ORIG_PS1/\\w/"$__kdf_gitprompt_pwd$PS1"}"
 }
 
-# Inserts git information into the prompt.
-_kdf_gitprompt()
-{
-	local repoToplevel="$(git rev-parse --show-toplevel 2>/dev/null)"
-
-	[[ -n $repoToplevel ]] || return 1
-
-	local friendlyRepoToplevel="${repoToplevel/#"$HOME"/~}" pathWithinRepo="${PWD#"$repoToplevel"}"
-	local branch="$(git symbolic-ref HEAD 2>/dev/null)"
-
-	[[ -z $branch ]] && branch="detached: $(git name-rev --name-only --always HEAD 2>/dev/null)"
-
-	local setaf_3=$'\e[33m' sgr0=$'\e(B\e[m'
-	PS1="${ORIG_PS1/\\w/\\[$setaf_3\\]$friendlyRepoToplevel\\[$sgr0\\]$pathWithinRepo (${branch##refs/heads/})}"
-}
+if [[ -e /usr/lib/git-core/git-sh-prompt ]]; then
+	. /usr/lib/git-core/git-sh-prompt
+	GIT_PS1_DESCRIBE_STYLE=branch
+	PROMPT_COMMAND=__kdf_prompt_command
+fi

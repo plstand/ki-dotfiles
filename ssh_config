@@ -1,0 +1,11 @@
+ControlPath /run/user/%i/ssh-%r@%h:%p
+
+Host github.com github
+Hostname github.com
+User git
+
+Host gerrit.wikimedia.org gerrit-wm
+ControlMaster auto
+ControlPersist 30
+Hostname gerrit.wikimedia.org
+Port 29418
