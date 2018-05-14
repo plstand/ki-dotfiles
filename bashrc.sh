@@ -14,7 +14,7 @@ export VISUAL=vim
 ORIG_PS1="$PS1"
 case "$TERM" in
 	xterm*|rxvt*)
-		ORIG_PS1_PREFIX="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]"
+		ORIG_PS1_PREFIX='\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]'
 		;;
 	*)
 		ORIG_PS1_PREFIX=
@@ -38,8 +38,8 @@ fi
 ## ALIASES ##
 
 # Prevents the disaster 'cp *' or 'mv *' can cause...
-alias 'cp=cp -i'
-alias 'mv=mv -i'
+alias cp='cp -i'
+alias mv='mv -i'
 
 ## COMMANDS ##
 
@@ -134,7 +134,7 @@ __kdf_gitprompt_colorize_pwd()
 	__kdf_gitprompt_pathpart="$pathpart"
 
 	# Build the string to insert into PS1
-	__kdf_gitprompt_pwd="\[\e[33m\]\${__kdf_gitprompt_repopart}\[\e[m\]\${__kdf_gitprompt_pathpart}"
+	__kdf_gitprompt_pwd='\[\e[33m\]${__kdf_gitprompt_repopart}\[\e[m\]${__kdf_gitprompt_pathpart}'
 }
 
 __kdf_prompt_command()
@@ -145,7 +145,7 @@ __kdf_prompt_command()
 		return
 	fi
 
-	__kdf_gitprompt_pwd="\w"
+	__kdf_gitprompt_pwd='\w'
 	if [[ $KDF_COLOR_SUPPORTED = yes ]]; then
 		__kdf_gitprompt_colorize_pwd
 	fi
