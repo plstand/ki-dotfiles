@@ -219,7 +219,7 @@ __kdf_prompt_command()
 
 if [[ -e /etc/profile.d/vte-2.91.sh ]]; then
 	. /etc/profile.d/vte-2.91.sh
-	KDF_USE_VTE=1
+	declare -F __vte_osc7 > /dev/null && KDF_USE_VTE=1
 fi
 
 if [[ -e /usr/lib/git-core/git-sh-prompt ]]; then
