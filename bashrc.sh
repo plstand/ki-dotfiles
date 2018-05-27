@@ -77,7 +77,7 @@ cdd()
 	[[ $1 == */* ]] && dir="${1%/*}/"
 
 	# Execute the cd command.
-	cd "${args[@]}" "$dir" || return
+	cd "${args[@]}" -- "$dir" || return
 }
 
 # Changes to an ancestor directory.
