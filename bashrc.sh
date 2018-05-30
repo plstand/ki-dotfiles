@@ -123,7 +123,7 @@ up()
 		printf '\n'
 	fi
 
-	until (( chosen == 2 )); do
+	while (( chosen != 2 )); do
 		if (( chosen == 0 )); then
 			read -rep 'Which directory? ' choice || return
 		fi
