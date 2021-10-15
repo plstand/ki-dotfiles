@@ -1,0 +1,4 @@
+# vim: set filetype=sshconfig:
+
+# Host foo.example.com foo
+# Hostname foo.example.com

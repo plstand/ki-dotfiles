@@ -1,4 +1,6 @@
-ControlPath /run/user/%i/ssh-%r@%h:%p
+# vim: set filetype=sshconfig:
+
+Include config.local
 
 Host github.com github
 Hostname github.com
@@ -9,3 +11,7 @@ ControlMaster auto
 ControlPersist 30
 Hostname gerrit.wikimedia.org
 Port 29418
+
+Host *
+ControlPath /run/user/%i/ssh-%r@%h:%p
+IdentitiesOnly yes
